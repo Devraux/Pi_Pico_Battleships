@@ -42,15 +42,15 @@ typedef enum wifiStatus
 /// @param ipO3 New IP Octet value
 /// @param ipO4 New IP Octet value
 /// @warning This func. have to be call BEFORE wifiInit
-void wifiSetIp(uint8_t ipO1, uint8_t ipO2, uint8_t ipO3, uint8_t ipO4)
+void wifiSetIp(uint8_t ipO1, uint8_t ipO2, uint8_t ipO3, uint8_t ipO4);
 
-    /// @brief Initialize wifi Access Point mode
-    /// @param ssid
-    /// @param password
-    /// @param recv - wifi receive callback
-    /// @param recv_arg - wifi callback arg.
-    /// @return struct wifiStatus
-    wifiStatus wifiApModeInit(const char *ssid, const char *password, udp_recv_fn recv, void *recv_arg);
+/// @brief Initialize wifi Access Point mode
+/// @param ssid
+/// @param password
+/// @param recv - wifi receive callback
+/// @param recv_arg - wifi callback arg.
+/// @return struct wifiStatus
+wifiStatus wifiApModeInit(const char *ssid, const char *password, udp_recv_fn recv, void *recv_arg);
 
 /// @brief Initialize wifi Standard mode
 /// @param ssid
