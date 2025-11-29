@@ -11,8 +11,8 @@ static dhcp_server_t dhcp_server;
 static struct udp_pcb *receivePcb = NULL;
 static struct udp_pcb *sendPcb = NULL;
 
-static char SSID[16] = "defaultSSID";
-static char PASSWORD[16] = "defaultPASSWORD";
+static char SSID[32] = "defaultSSID";
+static char PASSWORD[63] = "defaultPASSWORD";
 
 void wifiSetIp(uint8_t ipO1, uint8_t ipO2, uint8_t ipO3, uint8_t ipO4)
 {
@@ -38,10 +38,19 @@ wifiStatus wifiStaModeInit(const char *ssid, const char *password, udp_recv_fn r
     if (ssid == NULL || password == NULL)
     {
         printf("Your SSID or PASSWORD is incorrect.\n\r");
-        printf("Default SSID is: %s\n\r", SSID);
-        printf("Default PASSWORD is: %s\n\r", PASSWORD);
+        printf("Your default SSID is: %s\n\r", SSID);
+        printf("Your default PASSWORD is: %s\n\r", PASSWORD);
         printf("Default authorization is: CYW43_AUTH_OPEN. \n\r");
     }
+
+    if (strlen(password) > WIFI_MAX_PASSWORD_LENGTH || strlen(ssid) > WIFI_MAX_SSID_LENGTH)
+    {
+        printf("Your SSID or PASSWORD is too long.\n\r");
+        printf("Your default SSID is: %s\n\r", SSID);
+        printf("Your default PASSWORD is: %s\n\r", PASSWORD);
+        printf("Default authorization is: CYW43_AUTH_OPEN. \n\r");
+    }
+
     else
     {
         snprintf(SSID, sizeof(SSID), "%s", ssid);
@@ -95,6 +104,15 @@ wifiStatus wifiApModeInit(const char *ssid, const char *password, udp_recv_fn re
         printf("Default PASSWORD is: %s\n\r", PASSWORD);
         printf("Default authorization is: CYW43_AUTH_OPEN. \n\r");
     }
+
+    if (strlen(password) > WIFI_MAX_PASSWORD_LENGTH || strlen(ssid) > WIFI_MAX_SSID_LENGTH)
+    {
+        printf("Your SSID or PASSWORD is too long.\n\r");
+        printf("Your default SSID is: %s\n\r", SSID);
+        printf("Your default PASSWORD is: %s\n\r", PASSWORD);
+        printf("Default authorization is: CYW43_AUTH_OPEN. \n\r");
+    }
+
     else
     {
         snprintf(SSID, sizeof(SSID), "%s", ssid);

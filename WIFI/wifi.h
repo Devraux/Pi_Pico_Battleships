@@ -15,6 +15,9 @@
 #define WIFI_DEFAULT_AP_IP_O3 4   // OCTET 3
 #define WIFI_DEFAULT_AP_IP_O4 1   // OCTET 4
 
+#define WIFI_MAX_SSID_LENGTH 32
+#define WIFI_MAX_PASSWORD_LENGTH 64
+
 typedef struct wifiIpConfig
 {
     uint8_t AP_IP_OCTET_1; // WIFI_DEFAULT_AP_IP_O1,
