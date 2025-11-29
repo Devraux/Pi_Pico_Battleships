@@ -1,5 +1,4 @@
 #include "wifi.h"
-#include "dhcpServer.h"
 
 static wifiIpConfig wifiIp = {
     .AP_IP_OCTET_1 = WIFI_DEFAULT_AP_IP_O1,
@@ -80,7 +79,7 @@ wifiStatus wifiStaModeInit(const char *ssid, const char *password, udp_recv_fn r
         if (err == ERR_OK)
         {
             udp_recv(receivePcb, recv, recv_arg);
-            return wifiCratePcbSuccess;
+            return wifiConfigSuccess;
         }
         else
         {
@@ -138,7 +137,7 @@ wifiStatus wifiApModeInit(const char *ssid, const char *password, udp_recv_fn re
         if (err == ERR_OK)
         {
             udp_recv(receivePcb, recv, recv_arg);
-            return wifiCratePcbSuccess;
+            return wifiConfigSuccess;
         }
         else
         {
@@ -170,4 +169,16 @@ void wifiSendData(uint8_t *data, uint32_t dataLength, const ip_addr_t *destIp, u
     }
     else
         return;
+}
+
+const dhcp_client_info_t *dhcpServerGetClientInfo(void)
+{
+    const dhcp_client_info_t *info = dhcp_server_get_client_info();
+    return info;
+}
+
+uint32_t dhcpServerGetClientNumber(void)
+{
+    uint32_t clientNumber = dhcp_server_get_client_number();
+    return clientNumber;
 }

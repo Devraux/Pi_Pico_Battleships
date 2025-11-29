@@ -31,7 +31,7 @@
 #define DHCPS_BASE_IP (1)
 #define DHCPS_MAX_IP (8)
 #define MAC_LEN (6)
-#define MAX_USER_NUMBER 15
+#define MAX_USER_NUMBER 14
 
 typedef struct _dhcp_server_lease_t
 {

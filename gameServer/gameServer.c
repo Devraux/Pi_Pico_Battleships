@@ -9,6 +9,9 @@
 // 6. jeżeli tak -> wyślij informacje o tym do obu, następnie wyślij dla atakującego YOUR_TURN , goto 4
 // 7. jeżeli nie -> zamień graczy, goto 4
 
+static matchStatus gameStatus[7]; // Due to maximum dhcp server clients(14) maximum player number is 7 (7 * 2 = 14 active player's)
+static uint8_t activeMatchNumber = 0;
+
 static void wifiReceiveCb(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port);
 
 static void wifiReceiveCb(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port)
@@ -40,39 +43,34 @@ void gameMatchEnemies(void)
     const dhcp_client_info_t *dhcpInfo = NULL;
     uint32_t clientNumber = 0;
 
-    while (true)
+    // WAIT UNTIL COMPLETE USERS WILL CONNECT
+    while (dhcpServerGetClientNumber() % 2 != 0)
     {
-        clientNumber = dhcp_server_get_client_number();
-        dhcpInfo = dhcp_server_get_client_info();
-
-        printf("\n--- DHCP Server Scan: %u aktywnych klientow ---\n\r", clientNumber);
-
-        if (clientNumber == 0)
-        {
-            printf("Brak aktywnych klientow.\n\r");
-        }
-        else
-        {
-            for (uint32_t i = 0; i < clientNumber; ++i)
-            {
-                printf("Klient %lu / Host ID: %u\n\r", i + 1, dhcpInfo[i].hostID);
-
-                // Adres MAC
-                printf("  MAC: %02X:%02X:%02X:%02X:%02X:%02X\n\r",
-                       dhcpInfo[i].mac[0], dhcpInfo[i].mac[1], dhcpInfo[i].mac[2],
-                       dhcpInfo[i].mac[3], dhcpInfo[i].mac[4], dhcpInfo[i].mac[5]);
-
-                // Adres IP
-                printf("  IP: %u.%u.%u.%u\n\r",
-                       dhcpInfo[i].AP_IP_OCTET_1, dhcpInfo[i].AP_IP_OCTET_2,
-                       dhcpInfo[i].AP_IP_OCTET_3, dhcpInfo[i].AP_IP_OCTET_4);
-            }
-            printf("-------------------------------------------------\n\r");
-        }
+        printf("Game player number is odd");
         sleep_ms(1000);
+    }
+
+    dhcpInfo = dhcpServerGetClientInfo();
+    clientNumber = dhcpServerGetClientNumber();
+    activeMatchNumber = (uint8_t)(clientNumber / 2);
+    uint8_t secondPlayerID = 1; // start with index 1
+
+    for (uint8_t i = 0; i < activeMatchNumber; i++)
+    {
+
+        gameStatus[i].firstPlayer = dhcpInfo[secondPlayerID - 1].AP_IP_OCTET_4;
+        gameStatus[i].secondPlayer = dhcpInfo[secondPlayerID].AP_IP_OCTET_4;
+
+        gameStatus[i].firstPlayerRemainingHists = INITIAL_SHIP_POINTS;
+        gameStatus[i].secondPlayerRemainingHits = INITIAL_SHIP_POINTS;
+
+        gameStatus[i].firstPlayerShipMap;
+        gameStatus[i].secondPlayerShipMap;
+        secondPlayerID += 2;
     }
 }
 
+// FOR DEBUG ONLY
 static void gameTestConnection(void)
 {
     const dhcp_client_info_t *dhcpInfo = NULL;
@@ -80,8 +78,8 @@ static void gameTestConnection(void)
 
     while (true)
     {
-        clientNumber = dhcp_server_get_client_number();
-        dhcpInfo = dhcp_server_get_client_info();
+        clientNumber = dhcpServerGetClientNumber();
+        dhcpInfo = dhcpServerGetClientInfo();
 
         printf("\n--- DHCP Server Scan: %u active clients ---\n\r", clientNumber);
 
