@@ -6,6 +6,7 @@
 #include "lwip/netif.h"
 #include "lwip/udp.h"
 #include <pico/cyw43_arch.h>
+#include "dhcpServer.h"
 
 #define UDP_port 4444
 
@@ -69,4 +70,9 @@ wifiStatus wifiStaModeInit(const char *ssid, const char *password, udp_recv_fn r
 wifiStatus wifiDhcpServerInit(void);
 
 void wifiSendData(uint8_t *data, uint32_t dataLength, const ip_addr_t *destIp, uint32_t port);
+
+const dhcp_client_info_t *dhcpServerGetClientInfo(void);
+
+uint32_t dhcpServerGetClientNumber(void);
+
 #endif
