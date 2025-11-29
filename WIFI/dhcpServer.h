@@ -28,23 +28,38 @@
 
 #include "lwip/ip_addr.h"
 
-#define DHCPS_BASE_IP (16)
+#define DHCPS_BASE_IP (1)
 #define DHCPS_MAX_IP (8)
+#define MAC_LEN (6)
+#define MAX_USER_NUMBER 15
 
-typedef struct _dhcp_server_lease_t {
+typedef struct _dhcp_server_lease_t
+{
     uint8_t mac[6];
     uint16_t expiry;
 } dhcp_server_lease_t;
 
-typedef struct _dhcp_server_t {
+typedef struct _dhcp_server_t
+{
     ip_addr_t ip;
     ip_addr_t nm;
     dhcp_server_lease_t lease[DHCPS_MAX_IP];
     struct udp_pcb *udp;
 } dhcp_server_t;
 
+typedef struct dhcp_client_info_t
+{
+    uint8_t hostID;
+    uint8_t mac[MAC_LEN];
+    uint8_t AP_IP_OCTET_1;
+    uint8_t AP_IP_OCTET_2;
+    uint8_t AP_IP_OCTET_3;
+    uint8_t AP_IP_OCTET_4;
+} dhcp_client_info_t;
 
 void dhcp_server_init(dhcp_server_t *d, ip_addr_t *ip, ip_addr_t *nm);
 void dhcp_server_deinit(dhcp_server_t *d);
+uint32_t dhcp_server_get_client_number(void);
+const dhcp_client_info_t *dhcp_server_get_client_info(void);
 
 #endif // MICROPY_INCLUDED_LIB_NETUTILS_DHCPSERVER_H

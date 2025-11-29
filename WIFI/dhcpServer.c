@@ -68,6 +68,10 @@
 #define MAC_LEN (6)
 #define MAKE_IP4(a, b, c, d) ((a) << 24 | (b) << 16 | (c) << 8 | (d))
 
+static uint32_t clientNumber = 0;
+
+static dhcp_client_info_t dhcp_client_info[MAX_USER_NUMBER];
+
 typedef struct
 {
     uint8_t op;    // message opcode
@@ -86,7 +90,6 @@ typedef struct
     uint8_t file[128];    // boot file name
     uint8_t options[312]; // optional parameters, variable, starts with magic
 } dhcp_msg_t;
-
 
 static int dhcp_socket_new_dgram(struct udp_pcb **udp, void *cb_data, udp_recv_fn cb_udp_recv)
 {
@@ -202,6 +205,12 @@ static void opt_write_u32(uint8_t **opt, uint8_t cmd, uint32_t val)
 
 static void dhcp_server_process(void *arg, struct udp_pcb *upcb, struct pbuf *p, const ip_addr_t *src_addr, u16_t src_port)
 {
+    if (clientNumber > MAX_USER_NUMBER)
+    {
+        printf("Can not connect new user, server contain max available user number: %d", clientNumber);
+        return;
+    }
+
     dhcp_server_t *d = arg;
     (void)upcb;
     (void)src_addr;
@@ -283,41 +292,120 @@ static void dhcp_server_process(void *arg, struct udp_pcb *upcb, struct pbuf *p,
             // Should be NACK
             goto ignore_request;
         }
+
         if (memcmp(o + 2, &ip4_addr_get_u32(ip_2_ip4(&d->ip)), 3) != 0)
         {
             // Should be NACK
             goto ignore_request;
         }
+
         uint8_t yi = o[5] - DHCPS_BASE_IP;
+
         if (yi >= DHCPS_MAX_IP)
         {
             // Should be NACK
             goto ignore_request;
         }
+
         if (memcmp(d->lease[yi].mac, dhcp_msg.chaddr, MAC_LEN) == 0)
         {
             // MAC match, ok to use this IP address
         }
+
         else if (memcmp(d->lease[yi].mac, "\x00\x00\x00\x00\x00\x00", MAC_LEN) == 0)
         {
             // IP unused, ok to use this IP address
             memcpy(d->lease[yi].mac, dhcp_msg.chaddr, MAC_LEN);
         }
+
         else
         {
             // IP already in use
             // Should be NACK
             goto ignore_request;
         }
+
         d->lease[yi].expiry = (cyw43_hal_ticks_ms() + DEFAULT_LEASE_TIME_S * 1000) >> 16;
         dhcp_msg.yiaddr[3] = DHCPS_BASE_IP + yi;
         opt_write_u8(&opt, DHCP_OPT_MSG_TYPE, DHCPACK);
+
         printf("DHCPS: client connected: MAC=%02x:%02x:%02x:%02x:%02x:%02x IP=%u.%u.%u.%u\n",
                dhcp_msg.chaddr[0], dhcp_msg.chaddr[1], dhcp_msg.chaddr[2], dhcp_msg.chaddr[3], dhcp_msg.chaddr[4], dhcp_msg.chaddr[5],
                dhcp_msg.yiaddr[0], dhcp_msg.yiaddr[1], dhcp_msg.yiaddr[2], dhcp_msg.yiaddr[3]);
 
+        bool client_exists = false;
+        for (uint32_t i = 0; i < clientNumber; ++i)
+        {
+            if (memcmp(dhcp_client_info[i].mac, dhcp_msg.chaddr, MAC_LEN) == 0)
+            {
+                client_exists = true;
+                break;
+            }
+        }
+
+        if (!client_exists)
+        {
+            if (clientNumber < MAX_USER_NUMBER)
+            {
+                uint32_t server_ip_u32 = ip4_addr_get_u32(ip_2_ip4(&d->ip));
+                uint8_t client_host_id = DHCPS_BASE_IP + yi;
+
+                dhcp_client_info[clientNumber].hostID = client_host_id;
+                memcpy(dhcp_client_info[clientNumber].mac, dhcp_msg.chaddr, MAC_LEN);
+                dhcp_client_info[clientNumber].AP_IP_OCTET_1 = (server_ip_u32 >> 24) & 0xff;
+                dhcp_client_info[clientNumber].AP_IP_OCTET_2 = (server_ip_u32 >> 16) & 0xff;
+                dhcp_client_info[clientNumber].AP_IP_OCTET_3 = (server_ip_u32 >> 8) & 0xff;
+                dhcp_client_info[clientNumber].AP_IP_OCTET_4 = client_host_id;
+
+                clientNumber++;
+            }
+            else
+            {
+                printf("Can not connect with new client, obtained max client number\n");
+            }
+        }
         break;
     }
+    case DHCPRELEASE:
+
+    {
+        uint8_t released_ip_last_octet = dhcp_msg.ciaddr[3];
+        if (released_ip_last_octet >= DHCPS_BASE_IP)
+        {
+            uint8_t yi = released_ip_last_octet - DHCPS_BASE_IP;
+
+            if (yi < DHCPS_MAX_IP)
+            {
+                if (memcmp(d->lease[yi].mac, dhcp_msg.chaddr, MAC_LEN) == 0)
+
+                {
+                    printf("DHCPS: client released IP: MAC=%02x:%02x:%02x:%02x:%02x:%02x IP=%u.%u.%u.%u\n",
+
+                           dhcp_msg.chaddr[0], dhcp_msg.chaddr[1], dhcp_msg.chaddr[2], dhcp_msg.chaddr[3], dhcp_msg.chaddr[4], dhcp_msg.chaddr[5],
+
+                           dhcp_msg.ciaddr[0], dhcp_msg.ciaddr[1], dhcp_msg.ciaddr[2], dhcp_msg.ciaddr[3]);
+
+                    memset(d->lease[yi].mac, 0, MAC_LEN);
+                    for (int i = 0; i < clientNumber; ++i)
+
+                    {
+                        if (dhcp_client_info[i].hostID == released_ip_last_octet)
+                        {
+                            for (int j = i; j < clientNumber - 1; ++j)
+                            {
+                                dhcp_client_info[j] = dhcp_client_info[j + 1];
+                            }
+                            clientNumber--;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        goto ignore_request;
+    }
+
+    break;
 
     default:
         goto ignore_request;
@@ -351,4 +439,14 @@ void dhcp_server_init(dhcp_server_t *d, ip_addr_t *ip, ip_addr_t *nm)
 void dhcp_server_deinit(dhcp_server_t *d)
 {
     dhcp_socket_free(&d->udp);
+}
+
+uint32_t dhcp_server_get_client_number(void)
+{
+    return clientNumber;
+}
+
+const dhcp_client_info_t *dhcp_server_get_client_info(void)
+{
+    return dhcp_client_info;
 }
