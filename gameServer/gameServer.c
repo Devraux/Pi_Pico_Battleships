@@ -52,21 +52,145 @@ void gameMatchEnemies(void)
 
     dhcpInfo = dhcpServerGetClientInfo();
     clientNumber = dhcpServerGetClientNumber();
-    activeMatchNumber = (uint8_t)(clientNumber / 2);
     uint8_t secondPlayerID = 1; // start with index 1
 
+    activeMatchNumber = (uint8_t)(clientNumber / 2);
     for (uint8_t i = 0; i < activeMatchNumber; i++)
     {
-
         gameStatus[i].firstPlayer = dhcpInfo[secondPlayerID - 1].AP_IP_OCTET_4;
         gameStatus[i].secondPlayer = dhcpInfo[secondPlayerID].AP_IP_OCTET_4;
 
-        gameStatus[i].firstPlayerRemainingHists = INITIAL_SHIP_POINTS;
+        gameStatus[i].firstPlayerRemainingHits = INITIAL_SHIP_POINTS;
         gameStatus[i].secondPlayerRemainingHits = INITIAL_SHIP_POINTS;
 
         gameStatus[i].firstPlayerShipMap;
         gameStatus[i].secondPlayerShipMap;
+
+        gameStatus[i].playStatus = GAME_STARTED; // first player always begin game
         secondPlayerID += 2;
+    }
+}
+
+void battleShipGame(void)
+{
+    // befor battleShipGame we have to use some long delay(60 sec or longer) to let users to connect
+    gameMatchEnemies();
+
+    // MAIN LOOP
+    const dhcp_client_info_t *dhcpInfo = NULL;
+    uint32_t clientNumber = 0;
+    while (true)
+    {
+        // UPDATE USER INFO EVERY LOOP ITERATION
+        dhcpInfo = dhcpServerGetClientInfo();
+        clientNumber = dhcpServerGetClientNumber();
+
+        activeMatchNumber = (uint8_t)(clientNumber / 2);
+        for (uint8_t i = 0; i < activeMatchNumber; i++)
+        {
+            uint8_t X = gameStatus[i].coordinateX;
+            uint8_t Y = gameStatus[i].coordinateY;
+
+            ip_addr_t player1_addr;
+            IP_ADDR4(&player1_addr, 192, 168, 4, gameStatus[i].firstPlayer);
+            const ip_addr_t *firstPlayerIp = &player1_addr;
+
+            ip_addr_t player2_addr;
+            IP_ADDR4(&player2_addr, 192, 168, 4, gameStatus[i].secondPlayer);
+            const ip_addr_t *secondPlayerIp = &player2_addr;
+
+            uint8_t header;
+
+            switch (gameStatus[i].playStatus)
+            {
+            case GAME_STARTED:
+                header = SERVER_TO_CLIENT_GET_SHIP_MAP;
+                wifiSendData(&header, sizeof(header), firstPlayerIp, UDP_PORT);
+                gameStatus[i].playStatus = WAIT_FOR_FIRST_PLAYER_MOVE;
+                break;
+
+            case WAIT_FOR_FIRST_PLAYER_MOVE:
+            case WAIT_FOR_SECOND_PLAYER_MOVE:
+                continue; // waiting for player response
+                break;
+
+            case RECEIVED_COORDINATES_FROM_FIRST_PLAYER:
+                if (gameStatus[i].secondPlayerShipMap[X][Y] == LIFE) // First player hit ship
+                {
+                    gameStatus[i].secondPlayerShipMap[X][Y] = DEAD;
+                    gameStatus[i].secondPlayerRemainingHits--;
+                    gameStatus[i].playStatus = NEXT_MOVE_FIRST_PLAYER; // First player continue attacking
+
+                    if (gameStatus[i].secondPlayerRemainingHits == 0) // game finished, FIRST player WIN
+
+                        header = SERVER_TO_CLIENT_SHIP_HIT;
+                    wifiSendData(&header, sizeof(header), firstPlayerIp, UDP_PORT);  // Inform about HIT first player
+                    wifiSendData(&header, sizeof(header), secondPlayerIp, UDP_PORT); // Inform about HIT second player
+                }
+                else
+                {
+                    header = SERVER_TO_CLIENT_SHIP_MISS;
+                    wifiSendData(&header, sizeof(header), firstPlayerIp, UDP_PORT);  // Inform about MISS first player
+                    wifiSendData(&header, sizeof(header), secondPlayerIp, UDP_PORT); // Inform about MISS second player
+                }
+                break;
+
+            case RECEIVED_COORDINATES_FROM_SECOND_PLAYER:
+                if (gameStatus[i].firstPlayerShipMap[X][Y] == LIFE) // Second player hit ship
+                {
+                    gameStatus[i].firstPlayerShipMap[X][Y] = DEAD;
+                    gameStatus[i].firstPlayerRemainingHits--;
+                    gameStatus[i].playStatus = NEXT_MOVE_SECOND_PLAYER; // First player continue attacking
+
+                    if (gameStatus[i].firstPlayerRemainingHits == 0) // game finished, SECOND player WIN
+                    {
+                        gameStatus[i].playStatus = GAME_FINISHED;
+
+                        header = SERVER_TO_CLIENT_DEFEAT;
+                        wifiSendData(&header, sizeof(header), firstPlayerIp, UDP_PORT);
+                        header = SERVER_TO_CLIENT_WIN;
+                        wifiSendData(&header, sizeof(header), secondPlayerIp, UDP_PORT);
+                    }
+
+                    header = SERVER_TO_CLIENT_SHIP_HIT;
+                    wifiSendData(&header, sizeof(header), firstPlayerIp, UDP_PORT);  // Inform about HIT first player
+                    wifiSendData(&header, sizeof(header), secondPlayerIp, UDP_PORT); // Inform about HIT second player
+                }
+                else
+                {
+                    header = SERVER_TO_CLIENT_SHIP_MISS;
+                    wifiSendData(&header, sizeof(header), firstPlayerIp, UDP_PORT);  // Inform about MISS first player
+                    wifiSendData(&header, sizeof(header), secondPlayerIp, UDP_PORT); // Inform about MISS second player
+                }
+                break;
+
+            case NEXT_MOVE_FIRST_PLAYER:
+                header = SERVER_TO_CLIENT_GET_COORDINATES;
+                wifiSendData(&header, sizeof(header), firstPlayerIp, UDP_PORT);
+                header = SERVER_TO_CLIENT_WAIT_FOR_ENEMY_MOVE;
+                wifiSendData(&header, sizeof(header), secondPlayerIp, UDP_PORT);
+
+                break;
+
+            case NEXT_MOVE_SECOND_PLAYER:
+                header = SERVER_TO_CLIENT_GET_COORDINATES;
+                wifiSendData(&header, sizeof(header), secondPlayerIp, UDP_PORT);
+                header = SERVER_TO_CLIENT_WAIT_FOR_ENEMY_MOVE;
+                wifiSendData(&header, sizeof(header), firstPlayerIp, UDP_PORT);
+                break;
+
+            case GAME_FINISHED:
+                header = SERVER_TO_CLIENT_ASK_REMATCH;
+                wifiSendData(&header, sizeof(header), firstPlayerIp, UDP_PORT);
+                wifiSendData(&header, sizeof(header), secondPlayerIp, UDP_PORT);
+                break;
+
+            case MATCH_KILL:
+                continue;
+                break;
+            }
+        }
+        sleep_ms(150);
     }
 }
 

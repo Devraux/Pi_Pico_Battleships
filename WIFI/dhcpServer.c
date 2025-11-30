@@ -28,13 +28,7 @@
 //  https://www.ietf.org/rfc/rfc2131.txt
 //  https://tools.ietf.org/html/rfc2132 -- DHCP Options and BOOTP Vendor Extensions
 
-#include <stdio.h>
-#include <string.h>
-#include <errno.h>
-
-#include "cyw43_config.h"
 #include "dhcpServer.h"
-#include "lwip/udp.h"
 
 #define DHCPDISCOVER (1)
 #define DHCPOFFER (2)

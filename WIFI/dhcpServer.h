@@ -27,6 +27,11 @@
 #define MICROPY_INCLUDED_LIB_NETUTILS_DHCPSERVER_H
 
 #include "lwip/ip_addr.h"
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
+#include "cyw43_config.h"
+#include "lwip/udp.h"
 
 #define DHCPS_BASE_IP (1)
 #define DHCPS_MAX_IP (8)

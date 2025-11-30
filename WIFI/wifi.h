@@ -8,7 +8,7 @@
 #include <pico/cyw43_arch.h>
 #include "dhcpServer.h"
 
-#define UDP_port 4444
+#define UDP_PORT 4444
 
 // DEFAULT IP ADDRESS
 #define WIFI_DEFAULT_AP_IP_O1 192 // OCTET 1
