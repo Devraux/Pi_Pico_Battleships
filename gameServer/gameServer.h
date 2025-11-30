@@ -57,7 +57,10 @@ typedef enum packetType
     SERVER_TO_CLIENT_WIN,
     SERVER_TO_CLIENT_ASK_REMATCH, // play again, same teams, if anyone answer to NO, then match HAS TO PERMANENT FINISH = CLIENT APP CLOSE
     SERVER_TO_CLIENT_WAIT_FOR_ENEMY_MOVE,
-    SERVER_TO_CLIENT_DEFEAT
+    SERVER_TO_CLIENT_DEFEAT,
+
+    CLIENT_TO_SERVER_COORDINATES,
+    CLIENT_TO_SERVER_SHIP_MAP
 } packetType;
 
 typedef enum shipStatus
