@@ -1,6 +1,7 @@
 #include<stdio.h>
 #include "pico/stdlib.h"
 #include "pico/cyw43_arch.h"
+#include "gameServer.h"
 
 #define LED_PIN 0
 
@@ -9,6 +10,7 @@ int main()
     cyw43_arch_init();
     stdio_init_all();
     
+    battleShipGame();
 
     gpio_init(LED_PIN);
     gpio_set_dir(LED_PIN, GPIO_OUT);

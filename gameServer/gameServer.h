@@ -7,17 +7,31 @@
 #define SERVER_PASSWORD "password"
 #define INITIAL_SHIP_POINTS 17
 
+#define X_COORDINATE_READ_OFFSET 1
+#define Y_COORDINATE_READ_OFFSET 2
+
+#define MAP_SIZE 100 // bytes
+
 typedef enum playStatusInfo
 {
     GAME_STARTED = 0,
-    WAIT_FOR_FIRST_PLAYER_MOVE = 1,
-    WAIT_FOR_SECOND_PLAYER_MOVE = 2,
-    RECEIVED_COORDINATES_FROM_FIRST_PLAYER = 3,
-    RECEIVED_COORDINATES_FROM_SECOND_PLAYER = 4,
-    NEXT_MOVE_FIRST_PLAYER = 5,
-    NEXT_MOVE_SECOND_PLAYER = 6,
-    GAME_FINISHED = 7,
-    MATCH_KILL = 8 // permanent finish game, no rematch option
+    WAIT_FOR_FIRST_PLAYER_MOVE,
+    WAIT_FOR_SECOND_PLAYER_MOVE,
+    RECEIVED_COORDINATES_FROM_FIRST_PLAYER,
+    RECEIVED_COORDINATES_FROM_SECOND_PLAYER,
+    WAIT_FOR_FIRST_PLAYER_MAP_INFO,
+    WAIT_FOR_SECOND_PLAYER_MAP_INFO,
+    GET_FIRST_PLAYER_MAP,
+    GET_SECOND_PLAYER_MAP,
+    NEXT_MOVE_FIRST_PLAYER,
+    NEXT_MOVE_SECOND_PLAYER,
+    GAME_FINISHED,
+    WAIT_FOR_FIRST_PLAYER_REMACH_INFO,
+    WAIT_FOR_SECOND_PLAYER_REMACH_INFO, 
+    GET_FIRST_PLAYER_REMACH_INFO,
+    GET_SECOND_PLAYER_REMACH_INFO,
+    GAME_IDLE,
+    MATCH_KILL // permanent finish game, no rematch option
 
 } playStatusInfo;
 
@@ -25,6 +39,9 @@ typedef struct matchStatus
 {
     // CURRENT PLAY STATE
     playStatusInfo playStatus;
+
+    // PLAY NUMBER
+    uint8_t playNumber;
 
     // PLAYER ID
     uint8_t firstPlayer;  // last octet of player IP address
@@ -42,8 +59,8 @@ typedef struct matchStatus
     uint8_t coordinateX;
     uint8_t coordinateY;
 
-    // REMACH ACCEPTANCE
-    bool isMatchContinued;
+    // FLAG USED TO INDICATE REMACH
+    bool isGameContinued;
 
 } matchStatus;
 
@@ -60,7 +77,8 @@ typedef enum packetType
     SERVER_TO_CLIENT_DEFEAT,
 
     CLIENT_TO_SERVER_COORDINATES,
-    CLIENT_TO_SERVER_SHIP_MAP
+    CLIENT_TO_SERVER_SHIP_MAP,
+    CLIENT_TO_SERVER_IS_PLAY_CONTINUED
 } packetType;
 
 typedef enum shipStatus
@@ -73,5 +91,6 @@ typedef enum shipStatus
 
 bool gameServerInit(void);
 void gameMatchEnemies(void);
+void battleShipGame(void);
 
 #endif
