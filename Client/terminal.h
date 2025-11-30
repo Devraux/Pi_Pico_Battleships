@@ -64,10 +64,6 @@ typedef enum {
     Light_white  = LIGHT_WHITE,
 } Color_t;
 
-static inline void clearTerminal(){
-    printf("\033[H\033[J");
-}
-
 static inline void setCursorPosition(int x, int y){
     x++;
     y++;
@@ -86,7 +82,10 @@ static inline void setDefaultColor(){
     printf("\033[0m");
 }
 
+static inline void clearTerminal(){
+    setDefaultColor();
+    printf("\033[H\033[J");
+}
 
-// static inline Arrow_t
 
 #endif

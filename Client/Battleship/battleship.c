@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define TRY_LIMIT 2048
+
 typedef struct {
     int x1;
     int y1;
@@ -12,14 +14,14 @@ typedef struct {
 
 
 
-inline static void Battleship_setCursorPosition(const Board_t *board, int x, int y){
+static inline void Battleship_setCursorPosition(const Board_t *board, int x, int y){
     setCursorPosition(
         (x + 1) * 2 + board->position.x,
         y + 1 + board->position.y
     );
 }
 
-inline static void Battleship_displayShipInfo(const Ship_t ship){
+static inline void Battleship_displayShipInfo(const Ship_t ship){
     printf("Ship: %i, %c ", ship.position.x, 'a' + ship.position.y);
     switch (ship.direction){
         case Up:{
@@ -78,7 +80,7 @@ static inline Rect_t Battleship_wrapShipRectangle(const Ship_t ship){
 }
 
 
-static inline bool Battleship_canPlaceShip(const Board_t *board, const Ship_t ship, const int index){
+static inline bool Battleship_canPlaceShip(const Ship_t *ships, const Ship_t ship, const int index){
     switch (ship.direction){
         case Up: {
             if (ship.position.y - ship.size < 0) return false;
@@ -96,11 +98,15 @@ static inline bool Battleship_canPlaceShip(const Board_t *board, const Ship_t sh
 
     Rect_t ship_rect = Battleship_wrapShipRectangle(ship);
     for (int i = 0; i < index; i++){
-        Rect_t other_rect = Battleship_wrapShipRectangle(board->ships[i]);
+        Rect_t other_rect = Battleship_wrapShipRectangle(ships[i]);
         if (checkRectCollision(other_rect, ship_rect))
             return false;
     }
 
+    return true;
+}
+
+static bool Battleship_ask(const Point_t shot){
     return true;
 }
 
@@ -122,6 +128,7 @@ void Battleship_drawBoard(const Board_t *board){
 }
 
 static inline void Battleship_drawShip(const Board_t *board, const Ship_t ship){
+    setForegroundColor(Green);
     for (int j = 0; j < ship.size; j++){
         switch (ship.direction){
             case Up:{
@@ -139,76 +146,200 @@ static inline void Battleship_drawShip(const Board_t *board, const Ship_t ship){
         }
 
 
-        if (ship.status == Life){
-            setForegroundColor(Green);
-            putchar(SHIP);
-        } else {
-            setForegroundColor(Red);
-            putchar(DESTROY_SHIP);
-        }
+        putchar(LIFE_SHIP_FIELD);
         fflush(stdout);
-        setDefaultColor();
+    }
+    setDefaultColor();
+    fflush(stdout);
+}
+
+static inline void Battleship_putShipOnField(Board_t *board, const Ship_t ship){
+    int x, y;
+    for (int j = 0; j < ship.size; j++){
+        switch (ship.direction){
+            case Up:{
+                x = ship.position.x;
+                y = ship.position.y - j;
+            } break;
+            case Down:{
+                x = ship.position.x;
+                y = ship.position.y + j;
+            } break;
+            case Right:{
+                x = ship.position.x + j;
+                y = ship.position.y;
+            } break;
+            case Left:{
+                x = ship.position.x - j;
+                y = ship.position.y;
+            } break;
+        }
+
+        board->playField[y][x] = Life;
     }
 }
 
-void Battleship_drawShips(const Board_t *board){
-    for (int i = 0; i < NUMBER_OF_SHIP; i++){
-        ShipStatus_t status = board->ships[i].status;
-
-        Battleship_drawShip(board, board->ships[i]);
+void Battleship_draw(const Board_t *board){
+    for (int y = 0; y < NUMBER_OF_SHIP; y++){
+        Battleship_setCursorPosition(board, 0, y);
+        for (int x = 0; x < NUMBER_OF_SHIP; x++){
+            switch (board->playField[y][x]){
+                case None:
+                    putchar(NONE_FILED); break;
+                case Unknow:
+                    putchar(UNKNOWN_FIELD); break;
+                case Life:{
+                    setForegroundColor(Green);
+                    putchar(LIFE_SHIP_FIELD);
+                } break;
+                case Dead:{
+                    setForegroundColor(Red);
+                    putchar(DESTROY_SHIP_FIELD);
+                } break;
+            }
+            putchar(' ');
+        }
         fflush(stdout);
     }
+    setDefaultColor();
+    fflush(stdout);
 }
 
 void Battleship_generateShipPosition(Board_t *board){
     int possibleSize[NUMBER_OF_SHIP] = {4, 3, 3, 2, 2, 2, 1, 1, 1, 1};
+    int try = 0;
+    Ship_t ships[NUMBER_OF_SHIP];
     for (int i = 0; i < NUMBER_OF_SHIP; i++){
         Ship_t ship = {
             .position.x= rand() % BOARD_SIZE_X,
             .position.y= rand() % BOARD_SIZE_Y,
             .size = possibleSize[i],
             .direction = rand() % 4,
-            .status = Life
         };
 
-        if (!Battleship_canPlaceShip(board, ship, i)){
+        if (!Battleship_canPlaceShip(ships, ship, i)){
+            // Battleship_setCursorPosition(board, BOARD_SIZE_X + 2, i);
+            // printf("Try: %i, pos: %i, %i\n", try, ship.position.x, ship.position.y);
+            try++;
             i--;
+            if (try > TRY_LIMIT){
+                i = 0;
+            }
             continue;
         }
 
-        board->ships[i] = ship;
+        ships[i] = ship;
+        try = 0;
 
-        Battleship_drawShip(board, board->ships[i]);
+        // Battleship_drawShip(board, ship);
         Battleship_setCursorPosition(board, BOARD_SIZE_X + 2, i);
         Battleship_displayShipInfo(ship);
     }
+
+    Battleship_fill(board, None);
+    for (int i = 0; i < NUMBER_OF_SHIP; i++){
+        Battleship_putShipOnField(board, ships[i]);
+    }
 }
 
-void Battleship_fill(const Board_t *board, char c){
+void Battleship_fill(Board_t *board, ShipStatus_t status){
     for (int y = 0; y < BOARD_SIZE_X; y++){
-        setCursorPosition(1, board->position.y + 1 + y);
         for (int x = 0; x < BOARD_SIZE_Y; x++){
-            printf(" %c", c);
+            board->playField[y][x] = status;
+        }
+    }
+}
+
+Point_t Battleship_readUserInput(const Board_t *board){
+
+    Battleship_setCursorPosition(board, NUMBER_OF_SHIP + 1, NUMBER_OF_SHIP - 2);
+    printf("Shot:   ");
+    Battleship_setCursorPosition(board, NUMBER_OF_SHIP + 4, NUMBER_OF_SHIP - 2);
+    fflush(stdout);
+
+    Point_t position = {
+        .x = -1,
+        .y = -1
+    };
+
+    int position_index = 0;
+    while (true){
+        char r_pos = getchar();
+        if (
+            (  (r_pos >= 'a' && r_pos <= 'a' + NUMBER_OF_SHIP)
+            || (r_pos >= 'A' && r_pos <= 'A' + NUMBER_OF_SHIP))
+            && position_index < 2
+        ){
+            putchar(r_pos);
+            if (r_pos <= 'Z') {
+                r_pos += 'a' - 'A';
+            }
+            position.y = r_pos - 'a';
+            position_index++;
+        } else if (
+            (r_pos >= '0' && r_pos <='9')
+            && position_index < 2
+        ){
+            putchar(r_pos);
+            position.x = r_pos - '0';
+            position_index++;
+        } else if (
+            (r_pos == 8 || r_pos == 127)
+            && position_index > 0
+        ) {
+            printf("\b \b");
+            position_index--;
+        } else if (r_pos == '\r' || r_pos == '\n') {
+            if (position.x == -1 || position.y == -1){
+                Battleship_setCursorPosition(board, NUMBER_OF_SHIP + 1, NUMBER_OF_SHIP - 2);
+                printf("Shot:   ");
+                Battleship_setCursorPosition(board, NUMBER_OF_SHIP + 4, NUMBER_OF_SHIP - 2);
+                fflush(stdout);
+
+                position = (Point_t){
+                    .x = -1,
+                    .y = -1
+                };
+                position_index = 0;
+                continue;
+            }
+            break;
         }
         fflush(stdout);
     }
-}
 
-ShipStatus_t Battleship_checkShip(const Board_t *board, Point_t shipPosition){
-    for (int i = 0 ; i < NUMBER_OF_SHIP; i++){
-        if (
-            board->ships[i].position.x == shipPosition.x,
-            board->ships[i].position.y == shipPosition.y
-        ) return board->ships[i].status;
-    }
-    return None;
-}
-
-void Battleship_destroyShip(const Board_t *board, Point_t shipPosition){
-    Battleship_setCursorPosition(board, shipPosition.x, shipPosition.y);
-
-    setForegroundColor(Red);
-    putchar(DESTROY_SHIP);
-    setDefaultColor();
+    Battleship_setCursorPosition(board, NUMBER_OF_SHIP + 1, NUMBER_OF_SHIP - 1);
+    printf("(%i, %i)", position.x, position.y);
     fflush(stdout);
+
+    return position;
+}
+
+bool Battleship_checkShot(const Board_t *board, const Point_t shot){
+    if (board->playField[shot.y][shot.x] == Unknow){
+        return Battleship_ask(shot);
+    } else if (board->playField[shot.y][shot.x] == Life){
+        return true;
+    } else {
+        return false;
+    }
+}
+
+void Battleship_put(Board_t *board, Point_t position, ShipStatus_t status){
+    Battleship_setCursorPosition(board, position.x, position.y);
+    switch (status){
+        case None:
+            putchar(NONE_FILED); break;
+        case Unknow:
+            putchar(UNKNOWN_FIELD); break;
+        case Life:{
+            setForegroundColor(Green);
+            putchar(LIFE_SHIP_FIELD);
+        } break;
+        case Dead:{
+            setForegroundColor(Red);
+            putchar(DESTROY_SHIP_FIELD);
+        } break;
+    }
+    setDefaultColor();
 }
