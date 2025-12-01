@@ -81,12 +81,12 @@ static void wifiReceiveCb(void *arg, struct udp_pcb *pcb, struct pbuf *p, const 
         case CLIENT_TO_SERVER_IS_PLAY_CONTINUED:
             if (gameStatus[matchNumber].playStatus == WAIT_FOR_FIRST_PLAYER_REMACH_INFO) // received first player map
             {
-                gameStatus[matchNumber].isGameContinued &= receivedData[0];
+                gameStatus[matchNumber].isGameContinued &&receivedData[0];
                 gameStatus[matchNumber].playStatus = GET_FIRST_PLAYER_REMACH_INFO;
             }
             else
             {
-                gameStatus[matchNumber].isGameContinued &= receivedData[0];
+                gameStatus[matchNumber].isGameContinued &&receivedData[0];
                 gameStatus[matchNumber].playStatus = GET_SECOND_PLAYER_REMACH_INFO;
             }
 
@@ -109,6 +109,8 @@ bool gameServerInit(void)
     // if (status != wifiConfigSuccess)
     //     return false;
 
+    gpio_init(LED_PIN);
+    gpio_set_dir(LED_PIN, GPIO_OUT);
     return true;
 }
 
@@ -118,9 +120,9 @@ void gameMatchEnemies(void)
     uint32_t clientNumber = 0;
 
     // WAIT UNTIL COMPLETE USERS WILL CONNECT
-    while (dhcpServerGetClientNumber() % 2 != 0)
+    while (dhcpServerGetClientNumber() == 0 || dhcpServerGetClientNumber() % 2 != 0)
     {
-        printf("Game player number is odd, waiting for even number of players");
+        printf("Game player number is odd, waiting for even number of players\n\r");
         sleep_ms(1000);
     }
 
@@ -149,8 +151,16 @@ void gameMatchEnemies(void)
     }
 }
 
+static bool ledState = true;
 void battleShipGame(void)
 {
+    // SERVER INITIALISATION
+    gameServerInit();
+
+    // ##############################################################################
+    // ### WE HAVE TO ADD 1 MINUTE OR MORE DELAY TO LET USERS TO LOG IN TO SERVER ###
+    // ##############################################################################
+
     // befor battleShipGame we have to use some LONG delay(60 sec or longer) to let users to connect
     gameMatchEnemies();
 
@@ -159,6 +169,8 @@ void battleShipGame(void)
     uint32_t clientNumber = 0;
     while (true)
     {
+        cyw43_arch_gpio_put(LED_PIN, ledState);
+        ledState = !ledState;
         // UPDATE USER INFO EVERY LOOP ITERATION
         dhcpInfo = dhcpServerGetClientInfo();
         clientNumber = dhcpServerGetClientNumber();

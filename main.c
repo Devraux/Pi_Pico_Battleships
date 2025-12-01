@@ -7,7 +7,7 @@
 
 int main()
 {
-    cyw43_arch_init();
+    //cyw43_arch_init();
     stdio_init_all();
     
     battleShipGame();
