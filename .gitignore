@@ -11,6 +11,7 @@ CMakeCache.txt
 cmake_install.cmake
 Makefile
 compile_commands.json
+CmakeLists.txt
 
 # --- Pico SDK generated files ---
 generated/
