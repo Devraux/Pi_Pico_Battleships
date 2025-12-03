@@ -12,8 +12,6 @@
 
 #define MAP_SIZE 100 // bytes
 
-#define LED_PIN 0
-
 typedef enum playStatusInfo
 {
     GAME_STARTED = 0,

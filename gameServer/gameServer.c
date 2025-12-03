@@ -109,8 +109,6 @@ bool gameServerInit(void)
     // if (status != wifiConfigSuccess)
     //     return false;
 
-    gpio_init(LED_PIN);
-    gpio_set_dir(LED_PIN, GPIO_OUT);
     return true;
 }
 
@@ -169,7 +167,7 @@ void battleShipGame(void)
     uint32_t clientNumber = 0;
     while (true)
     {
-        cyw43_arch_gpio_put(LED_PIN, ledState);
+        cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, ledState);
         ledState = !ledState;
         // UPDATE USER INFO EVERY LOOP ITERATION
         dhcpInfo = dhcpServerGetClientInfo();
