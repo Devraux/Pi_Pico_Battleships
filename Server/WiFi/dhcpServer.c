@@ -28,22 +28,16 @@
 //  https://www.ietf.org/rfc/rfc2131.txt
 //  https://tools.ietf.org/html/rfc2132 -- DHCP Options and BOOTP Vendor Extensions
 
-#include <stdio.h>
-#include <string.h>
-#include <errno.h>
-
-#include "cyw43_config.h"
 #include "dhcpServer.h"
-#include "lwip/udp.h"
 
-#define DHCPDISCOVER (1)
-#define DHCPOFFER (2)
-#define DHCPREQUEST (3)
-#define DHCPDECLINE (4)
-#define DHCPACK (5)
-#define DHCPNACK (6)
-#define DHCPRELEASE (7)
-#define DHCPINFORM (8)
+#define DHCPDISCOVER (1) // client looking for available IP
+#define DHCPOFFER (2)    // server offers IP to client
+#define DHCPREQUEST (3)  // client requests specific IP
+#define DHCPDECLINE (4)  // client rejects offered IP
+#define DHCPACK (5)      // server confirms IP assignment
+#define DHCPNACK (6)     // server denies IP request
+#define DHCPRELEASE (7)  // client releases assigned IP
+#define DHCPINFORM (8)   // client asks for additional info
 
 #define DHCP_OPT_PAD (0)
 #define DHCP_OPT_SUBNET_MASK (1)
@@ -74,21 +68,21 @@ static dhcp_client_info_t dhcp_client_info[MAX_USER_NUMBER];
 
 typedef struct
 {
-    uint8_t op;    // message opcode
-    uint8_t htype; // hardware address type
-    uint8_t hlen;  // hardware address length
-    uint8_t hops;
-    uint32_t xid;  // transaction id, chosen by client
-    uint16_t secs; // client seconds elapsed
-    uint16_t flags;
-    uint8_t ciaddr[4];    // client IP address
-    uint8_t yiaddr[4];    // your IP address
-    uint8_t siaddr[4];    // next server IP address
-    uint8_t giaddr[4];    // relay agent IP address
-    uint8_t chaddr[16];   // client hardware address
-    uint8_t sname[64];    // server host name
-    uint8_t file[128];    // boot file name
-    uint8_t options[312]; // optional parameters, variable, starts with magic
+    uint8_t op;           // message type (request/reply)
+    uint8_t htype;        // hardware type (e.g., Ethernet)
+    uint8_t hlen;         // hardware address length (MAC = 6)
+    uint8_t hops;         // relay hops count
+    uint32_t xid;         // transaction ID
+    uint16_t secs;        // seconds since client started
+    uint16_t flags;       // flags (e.g., broadcast)
+    uint8_t ciaddr[4];    // client IP (if already assigned)
+    uint8_t yiaddr[4];    // your IP (assigned by server)
+    uint8_t siaddr[4];    // next server IP (optional)
+    uint8_t giaddr[4];    // relay agent IP
+    uint8_t chaddr[16];   // client MAC address
+    uint8_t sname[64];    // server host name (optional)
+    uint8_t file[128];    // boot file name (optional)
+    uint8_t options[312]; // DHCP option
 } dhcp_msg_t;
 
 static int dhcp_socket_new_dgram(struct udp_pcb **udp, void *cb_data, udp_recv_fn cb_udp_recv)
@@ -329,7 +323,7 @@ static void dhcp_server_process(void *arg, struct udp_pcb *upcb, struct pbuf *p,
         dhcp_msg.yiaddr[3] = DHCPS_BASE_IP + yi;
         opt_write_u8(&opt, DHCP_OPT_MSG_TYPE, DHCPACK);
 
-        printf("DHCPS: client connected: MAC=%02x:%02x:%02x:%02x:%02x:%02x IP=%u.%u.%u.%u\n",
+        printf("\nDHCPS: client connected: MAC=%02x:%02x:%02x:%02x:%02x:%02x IP=%u.%u.%u.%u\n",
                dhcp_msg.chaddr[0], dhcp_msg.chaddr[1], dhcp_msg.chaddr[2], dhcp_msg.chaddr[3], dhcp_msg.chaddr[4], dhcp_msg.chaddr[5],
                dhcp_msg.yiaddr[0], dhcp_msg.yiaddr[1], dhcp_msg.yiaddr[2], dhcp_msg.yiaddr[3]);
 

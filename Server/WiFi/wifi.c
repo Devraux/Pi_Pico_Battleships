@@ -75,7 +75,7 @@ wifiStatus wifiStaModeInit(const char *ssid, const char *password, udp_recv_fn r
             return wifiCratePcbFail;
         }
 
-        err_t err = udp_bind(receivePcb, IP_ADDR_ANY, UDP_port);
+        err_t err = udp_bind(receivePcb, IP_ADDR_ANY, UDP_PORT);
         if (err == ERR_OK)
         {
             udp_recv(receivePcb, recv, recv_arg);
@@ -119,7 +119,7 @@ wifiStatus wifiApModeInit(const char *ssid, const char *password, udp_recv_fn re
     }
 
     cyw43_arch_init();
-    cyw43_arch_enable_ap_mode(SSID, PASSWORD, CYW43_AUTH_OPEN);
+    cyw43_arch_enable_ap_mode(SSID, PASSWORD, CYW43_AUTH_WPA2_AES_PSK);
     sleep_ms(1000);
 
     if (receivePcb == NULL || sendPcb == NULL)
@@ -133,7 +133,7 @@ wifiStatus wifiApModeInit(const char *ssid, const char *password, udp_recv_fn re
             return wifiCratePcbFail;
         }
 
-        err_t err = udp_bind(receivePcb, IP_ADDR_ANY, UDP_port);
+        err_t err = udp_bind(receivePcb, IP_ADDR_ANY, UDP_PORT);
         if (err == ERR_OK)
         {
             udp_recv(receivePcb, recv, recv_arg);
@@ -182,3 +182,11 @@ uint32_t dhcpServerGetClientNumber(void)
     uint32_t clientNumber = dhcp_server_get_client_number();
     return clientNumber;
 }
+
+// const ip_addr_t *createIpAddrPtr(uint8_t octet1, uint8_t octet2, uint8_t octet3, uint8_t octet4)
+// {
+//     static ip_addr_t destAddr;
+//     IP_ADDR4(&destAddr, octet1, octet2, octet3, octet4);
+
+//     return &destAddr;
+// }

@@ -7,8 +7,9 @@
 #include "lwip/udp.h"
 #include <pico/cyw43_arch.h>
 #include "dhcpServer.h"
+#include "lwip/dhcp.h"
 
-#define UDP_port 4444
+#define UDP_PORT 4444
 
 // DEFAULT IP ADDRESS
 #define WIFI_DEFAULT_AP_IP_O1 192 // OCTET 1
@@ -74,5 +75,26 @@ void wifiSendData(uint8_t *data, uint32_t dataLength, const ip_addr_t *destIp, u
 const dhcp_client_info_t *dhcpServerGetClientInfo(void);
 
 uint32_t dhcpServerGetClientNumber(void);
+
+// ########################################################## //
+// ########## HOW TO USE WITH CLIENT  SOFTWARE ############## //
+// ########################################################## //
+
+// #include "pico/cyw43_arch.h"
+// #include "lwip/dhcp.h"
+
+// void test(void)
+// {
+// cyw43_arch_init();
+// cyw43_arch_enable_sta_mode();
+
+// cyw43_arch_wifi_connect_blocking("SSID_AP", "PASSWORD", CYW43_AUTH_WPA2_AES_PSK);
+
+// struct netif *netif = netif_default;
+// dhcp_start(netif);
+// sleep_ms(1000);
+// printf("My IP: %s\n", ip4addr_ntoa(&netif->ip_addr));
+//}
+// ########################################################## //
 
 #endif
