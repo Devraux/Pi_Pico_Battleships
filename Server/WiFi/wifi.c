@@ -119,7 +119,7 @@ wifiStatus wifiApModeInit(const char *ssid, const char *password, udp_recv_fn re
     }
 
     cyw43_arch_init();
-    cyw43_arch_enable_ap_mode(SSID, PASSWORD, CYW43_AUTH_OPEN);
+    cyw43_arch_enable_ap_mode(SSID, PASSWORD, CYW43_AUTH_WPA2_AES_PSK);
     sleep_ms(1000);
 
     if (receivePcb == NULL || sendPcb == NULL)

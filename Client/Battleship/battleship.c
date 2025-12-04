@@ -175,7 +175,7 @@ static inline void Battleship_putShipOnField(Board_t *board, const Ship_t ship){
             } break;
         }
 
-        board->playField[y][x] = Life;
+        board->playField[y][x] = LIFE;
     }
 }
 
@@ -184,15 +184,15 @@ void Battleship_draw(const Board_t *board){
         Battleship_setCursorPosition(board, 0, y);
         for (int x = 0; x < NUMBER_OF_SHIP; x++){
             switch (board->playField[y][x]){
-                case None:
+                case NONE:
                     putchar(NONE_FILED); break;
-                case Unknow:
+                case UNKNOW:
                     putchar(UNKNOWN_FIELD); break;
-                case Life:{
+                case LIFE:{
                     setForegroundColor(Green);
                     putchar(LIFE_SHIP_FIELD);
                 } break;
-                case Dead:{
+                case DEAD:{
                     setForegroundColor(Red);
                     putchar(DESTROY_SHIP_FIELD);
                 } break;
@@ -236,7 +236,7 @@ void Battleship_generateShipPosition(Board_t *board){
         Battleship_displayShipInfo(ship);
     }
 
-    Battleship_fill(board, None);
+    Battleship_fill(board, NONE);
     for (int i = 0; i < NUMBER_OF_SHIP; i++){
         Battleship_putShipOnField(board, ships[i]);
     }
@@ -316,9 +316,9 @@ Point_t Battleship_readUserInput(const Board_t *board){
 }
 
 bool Battleship_checkShot(const Board_t *board, const Point_t shot){
-    if (board->playField[shot.y][shot.x] == Unknow){
+    if (board->playField[shot.y][shot.x] == UNKNOW){
         return Battleship_ask(shot);
-    } else if (board->playField[shot.y][shot.x] == Life){
+    } else if (board->playField[shot.y][shot.x] == LIFE){
         return true;
     } else {
         return false;
@@ -328,15 +328,15 @@ bool Battleship_checkShot(const Board_t *board, const Point_t shot){
 void Battleship_put(Board_t *board, Point_t position, ShipStatus_t status){
     Battleship_setCursorPosition(board, position.x, position.y);
     switch (status){
-        case None:
+        case NONE:
             putchar(NONE_FILED); break;
-        case Unknow:
+        case UNKNOW:
             putchar(UNKNOWN_FIELD); break;
-        case Life:{
+        case LIFE:{
             setForegroundColor(Green);
             putchar(LIFE_SHIP_FIELD);
         } break;
-        case Dead:{
+        case DEAD:{
             setForegroundColor(Red);
             putchar(DESTROY_SHIP_FIELD);
         } break;

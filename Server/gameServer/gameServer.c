@@ -67,12 +67,12 @@ static void wifiReceiveCb(void *arg, struct udp_pcb *pcb, struct pbuf *p, const 
             // copy data to proper place
             if (gameStatus[matchNumber].playStatus == WAIT_FOR_FIRST_PLAYER_MAP_INFO) // received first player map
             {
-                memcpy(&gameStatus[matchNumber].firstPlayerShipMap, &receivedData[1], MAP_SIZE);
+                memcpy(&gameStatus[matchNumber].firstPlayerShipMap, &receivedData[1], BOARD_AREA);
                 gameStatus[matchNumber].playStatus = GET_SECOND_PLAYER_MAP;
             }
             else // Second player MAP
             {
-                memcpy(&gameStatus[matchNumber].secondPlayerShipMap, &receivedData[1], MAP_SIZE);
+                memcpy(&gameStatus[matchNumber].secondPlayerShipMap, &receivedData[1], BOARD_AREA);
                 gameStatus[matchNumber].playStatus = NEXT_MOVE_FIRST_PLAYER; // Game starts by first player move !!! <- HERE GAME STARTS !!!
             }
 
@@ -100,7 +100,7 @@ static void wifiReceiveCb(void *arg, struct udp_pcb *pcb, struct pbuf *p, const 
 bool gameServerInit(void)
 {
     uint32_t status = wifiConfigFail;
-    status = wifiApModeInit(SERVER_SID, SERVER_PASSWORD, &wifiReceiveCb, NULL);
+    status = wifiApModeInit(SSID, PASS, &wifiReceiveCb, NULL);
     // if (status != wifiConfigSuccess)
     //     return false;
 
@@ -118,11 +118,13 @@ void gameMatchEnemies(void)
     uint32_t clientNumber = 0;
 
     // WAIT UNTIL COMPLETE USERS WILL CONNECT
-    while (dhcpServerGetClientNumber() == 0 || dhcpServerGetClientNumber() % 2 != 0)
+    while (clientNumber == 0 || clientNumber % 2 != 0)
     {
-        printf("Game player number is odd, waiting for even number of players\n\r");
+        clientNumber = dhcpServerGetClientNumber();
+        printf("\rWaiting for players... [%i]", clientNumber);
         sleep_ms(1000);
     }
+    printf("\n");
 
     dhcpInfo = dhcpServerGetClientInfo();
     clientNumber = dhcpServerGetClientNumber();
@@ -138,8 +140,8 @@ void gameMatchEnemies(void)
         gameStatus[i].firstPlayer = dhcpInfo[secondPlayerID - 1].AP_IP_OCTET_4;
         gameStatus[i].secondPlayer = dhcpInfo[secondPlayerID].AP_IP_OCTET_4;
 
-        gameStatus[i].firstPlayerRemainingHits = INITIAL_SHIP_POINTS;
-        gameStatus[i].secondPlayerRemainingHits = INITIAL_SHIP_POINTS;
+        gameStatus[i].firstPlayerRemainingHits = INITIAL_LIFE_SHIP;
+        gameStatus[i].secondPlayerRemainingHits = INITIAL_LIFE_SHIP;
 
         gameStatus[i].firstPlayerShipMap;
         gameStatus[i].secondPlayerShipMap;
@@ -220,8 +222,8 @@ void battleShipGame(void)
             case GET_SECOND_PLAYER_REMACH_INFO:
                 if (gameStatus[i].isGameContinued == true)
                 {
-                    gameStatus[i].firstPlayerRemainingHits = INITIAL_SHIP_POINTS;  // RESTORE SHIP NUMBER FOR BOTH PLAYERS
-                    gameStatus[i].secondPlayerRemainingHits = INITIAL_SHIP_POINTS; // RESTORE SHIP NUMBER FOR BOTH PLAYERS
+                    gameStatus[i].firstPlayerRemainingHits = INITIAL_LIFE_SHIP;  // RESTORE SHIP NUMBER FOR BOTH PLAYERS
+                    gameStatus[i].secondPlayerRemainingHits = INITIAL_LIFE_SHIP; // RESTORE SHIP NUMBER FOR BOTH PLAYERS
                     gameStatus[i].playStatus = GET_FIRST_PLAYER_MAP;
                 }
                 else

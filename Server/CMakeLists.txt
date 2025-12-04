@@ -27,6 +27,7 @@ include_directories(${PROJECT_NAME}
     .
     gameServer
     WiFi
+    ../Utility
 )
 
 # pico_generate_pio_header(${PROJECT_NAME}

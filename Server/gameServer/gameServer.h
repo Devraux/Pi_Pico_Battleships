@@ -2,15 +2,11 @@
 #define _GAME_SERVER_
 #include "wifi.h"
 #include <stdio.h>
-
-#define SERVER_SID "battleShipsServer"
-#define SERVER_PASSWORD "password"
-#define INITIAL_SHIP_POINTS 17
+#include "utility.h"
 
 #define X_COORDINATE_READ_OFFSET 1
 #define Y_COORDINATE_READ_OFFSET 2
 
-#define MAP_SIZE 100 // bytes
 
 typedef enum playStatusInfo
 {
@@ -52,8 +48,8 @@ typedef struct matchStatus
     uint8_t secondPlayerRemainingHits;
 
     // PLAYER  BATTLE SHIP MAP'S
-    uint8_t firstPlayerShipMap[10][10];
-    uint8_t secondPlayerShipMap[10][10];
+    uint8_t firstPlayerShipMap[BOARD_SIZE_Y][BOARD_SIZE_X];
+    uint8_t secondPlayerShipMap[BOARD_SIZE_Y][BOARD_SIZE_X];
 
     // RECEIVED COORDINATE FROM PLAYERS
     uint8_t coordinateX;
@@ -63,31 +59,6 @@ typedef struct matchStatus
     bool isGameContinued;
 
 } matchStatus;
-
-typedef enum packetType
-{
-    SERVER_TO_CLIENT_GET_SHIP_MAP,
-    SERVER_TO_CLIENT_GET_COORDINATES,
-    SERVER_TO_CLIENT_SHIP_HIT,
-    SERVER_TO_CLIENT_SHIP_MISS,
-    SERVER_TO_CLIENT_GAME_FINISHED,
-    SERVER_TO_CLIENT_WIN,
-    SERVER_TO_CLIENT_ASK_REMATCH, // play again, same teams, if anyone answer to NO, then match HAS TO PERMANENT FINISH = CLIENT APP CLOSE
-    SERVER_TO_CLIENT_WAIT_FOR_ENEMY_MOVE,
-    SERVER_TO_CLIENT_DEFEAT,
-
-    CLIENT_TO_SERVER_COORDINATES,
-    CLIENT_TO_SERVER_SHIP_MAP,
-    CLIENT_TO_SERVER_IS_PLAY_CONTINUED
-} packetType;
-
-typedef enum shipStatus
-{
-    NONE = 0,
-    UNKNOWN = 1,
-    LIFE = 2,
-    DEAD = 3
-} shipStatus;
 
 bool gameServerInit(void);
 void gameMatchEnemies(void);

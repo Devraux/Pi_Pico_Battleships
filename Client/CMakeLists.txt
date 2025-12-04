@@ -21,6 +21,7 @@ add_executable(${PROJECT_NAME}
 include_directories(${PROJECT_NAME}
     .
     Battleship
+    ../Utility
 )
 
 

@@ -2,16 +2,13 @@
 #define __BATTLESHIP_H__
 
 #include <stdbool.h>
+#include "utility.h"
 
 #define NONE_FILED              ' '
 #define UNKNOWN_FIELD           '?'
 #define LIFE_SHIP_FIELD         'S'
 #define DESTROY_SHIP_FIELD      'X'
 
-#define NUMBER_OF_SHIP          10
-#define BOARD_SIZE_X            10
-#define BOARD_SIZE_Y            10
-#define SHIPS_FIELD             5
 
 typedef enum {
     Up,
@@ -25,13 +22,6 @@ typedef struct {
     int y;
 } Point_t;
 
-typedef enum {
-    None,
-    Unknow,
-    Life,
-    Dead
-} ShipStatus_t;
-
 typedef struct {
     Point_t position;
     int size;
@@ -40,7 +30,7 @@ typedef struct {
 
 typedef struct{
     Point_t position;
-    ShipStatus_t playField[NUMBER_OF_SHIP][NUMBER_OF_SHIP];
+    ShipStatus_t playField[BOARD_SIZE_Y][BOARD_SIZE_X];
     int ships_filed;
 } Board_t;
 
