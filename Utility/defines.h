@@ -8,6 +8,9 @@
 
 #define BOARD_AREA              (BOARD_SIZE_X * BOARD_SIZE_Y)
 
+#define SERVER_UDP_PORT 4444
+#define CLIENT_UDP_PORT 4445
+#define UDP_MSG_LEN_MAX 128
 
 
 #endif

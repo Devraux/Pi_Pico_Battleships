@@ -4,9 +4,10 @@
 #include "gameServer.h"
 
 
-int main()
-{
+int main(){
     stdio_init_all();
+    gameServerInit();
+    cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
 
     battleShipGame();
     while(true){

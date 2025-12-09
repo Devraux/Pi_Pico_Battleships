@@ -21,7 +21,8 @@ typedef enum {
     NONE        = 0,
     UNKNOW      = 1,
     LIFE        = 2,
-    DEAD        = 3
+    DEAD        = 3,
+    EMPTY       = 4
 } ShipStatus_t;
 
 

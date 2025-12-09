@@ -75,7 +75,7 @@ wifiStatus wifiStaModeInit(const char *ssid, const char *password, udp_recv_fn r
             return wifiCratePcbFail;
         }
 
-        err_t err = udp_bind(receivePcb, IP_ADDR_ANY, UDP_PORT);
+        err_t err = udp_bind(receivePcb, IP_ADDR_ANY, SERVER_UDP_PORT);
         if (err == ERR_OK)
         {
             udp_recv(receivePcb, recv, recv_arg);
@@ -118,9 +118,9 @@ wifiStatus wifiApModeInit(const char *ssid, const char *password, udp_recv_fn re
         snprintf(PASSWORD, sizeof(PASSWORD), "%s", password);
     }
 
-    cyw43_arch_init();
+    cyw43_arch_init_with_country(CYW43_COUNTRY_POLAND);
+    // cyw43_arch_init();
     cyw43_arch_enable_ap_mode(SSID, PASSWORD, CYW43_AUTH_WPA2_AES_PSK);
-    sleep_ms(1000);
 
     if (receivePcb == NULL || sendPcb == NULL)
     {
@@ -133,7 +133,7 @@ wifiStatus wifiApModeInit(const char *ssid, const char *password, udp_recv_fn re
             return wifiCratePcbFail;
         }
 
-        err_t err = udp_bind(receivePcb, IP_ADDR_ANY, UDP_PORT);
+        err_t err = udp_bind(receivePcb, IP_ADDR_ANY, SERVER_UDP_PORT);
         if (err == ERR_OK)
         {
             udp_recv(receivePcb, recv, recv_arg);
@@ -167,8 +167,6 @@ void wifiSendData(uint8_t *data, uint32_t dataLength, const ip_addr_t *destIp, u
             printf("Failed to send UDP packet\n");
         pbuf_free(p);
     }
-    else
-        return;
 }
 
 const dhcp_client_info_t *dhcpServerGetClientInfo(void)

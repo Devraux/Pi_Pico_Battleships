@@ -9,7 +9,8 @@
 #include "dhcpServer.h"
 #include "lwip/dhcp.h"
 
-#define UDP_PORT 4444
+#include "defines.h"
+
 
 // DEFAULT IP ADDRESS
 #define WIFI_DEFAULT_AP_IP_O1 192 // OCTET 1

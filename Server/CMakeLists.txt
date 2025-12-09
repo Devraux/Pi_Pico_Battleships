@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 
 # Select board:
-set(PICO_BOARD pico_w)
+set(PICO_BOARD pico2_w)
 
 include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
 include($ENV{PICO_SDK_PATH}/tools/CMakeLists.txt)
@@ -39,7 +39,6 @@ pico_add_extra_outputs(${PROJECT_NAME})
 target_link_libraries(${PROJECT_NAME}
     pico_stdlib
     hardware_gpio
-    # pico_cyw43_arch_lwip_poll
     pico_cyw43_arch_lwip_threadsafe_background
 )
 

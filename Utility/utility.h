@@ -3,6 +3,7 @@
 
 #include "defines.h"
 #include "enums.h"
+#include "structs.h"
 #include "PASS.h"
 
 #endif
