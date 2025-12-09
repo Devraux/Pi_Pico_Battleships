@@ -1,7 +1,12 @@
 #include "battleship.h"
-#include "terminal.h"
+
 #include <stdio.h>
 #include <stdlib.h>
+#include <memory.h>
+#include <string.h>
+
+#include "terminal.h"
+#include "udp.h"
 
 #define TRY_LIMIT 2048
 
@@ -11,8 +16,6 @@ typedef struct {
     int x2;
     int y2;
 } Rect_t;
-
-
 
 static inline void Battleship_setCursorPosition(const Board_t *board, int x, int y){
     setCursorPosition(
@@ -107,7 +110,17 @@ static inline bool Battleship_canPlaceShip(const Ship_t *ships, const Ship_t shi
 }
 
 static bool Battleship_ask(const Point_t shot){
-    return true;
+    uint8_t msg[3] = {
+        CLIENT_TO_SERVER_COORDINATES,
+        shot.x,
+        shot.y
+    };
+    UDP_write(SERVER_UDP_PORT, msg, sizeof(msg));
+    TransferPacket_t packet = Battleship_getPacket();
+    return (
+        packet.header == SERVER_TO_CLIENT_SHIP_HIT ||
+        packet.header == SERVER_TO_CLIENT_WIN
+    );
 }
 
 void Battleship_drawBoard(const Board_t *board){
@@ -187,6 +200,7 @@ void Battleship_draw(const Board_t *board){
                 case NONE:
                     putchar(NONE_FILED); break;
                 case UNKNOW:
+                    setForegroundColor(Light_black);
                     putchar(UNKNOWN_FIELD); break;
                 case LIFE:{
                     setForegroundColor(Green);
@@ -203,6 +217,14 @@ void Battleship_draw(const Board_t *board){
     }
     setDefaultColor();
     fflush(stdout);
+}
+
+void Battleship_redraw(const Board_t *local, const Board_t* enemy){
+    clearTerminal();
+    Battleship_drawBoard(local);
+    Battleship_drawBoard(enemy);
+    Battleship_draw(local);
+    Battleship_draw(enemy);
 }
 
 void Battleship_generateShipPosition(Board_t *board){
@@ -232,8 +254,8 @@ void Battleship_generateShipPosition(Board_t *board){
         try = 0;
 
         // Battleship_drawShip(board, ship);
-        Battleship_setCursorPosition(board, BOARD_SIZE_X + 2, i);
-        Battleship_displayShipInfo(ship);
+        // Battleship_setCursorPosition(board, BOARD_SIZE_X + 2, i);
+        // Battleship_displayShipInfo(ship);
     }
 
     Battleship_fill(board, NONE);
@@ -340,6 +362,121 @@ void Battleship_put(Board_t *board, Point_t position, ShipStatus_t status){
             setForegroundColor(Red);
             putchar(DESTROY_SHIP_FIELD);
         } break;
+        case EMPTY:{
+            setForegroundColor(Yellow);
+            putchar(EMPTY_FIELD);
+        } break;
     }
+    fflush(stdout);
     setDefaultColor();
+}
+
+TransferPacket_t Battleship_getPacket(){
+    uint8_t msg[UDP_MSG_LEN_MAX];
+    int cnt = 0;
+    setCursorPosition(TURN_MSG_POS_X, 0);
+    printf("Wait for packet");
+    fflush(stdout);
+    while(!UDP_read(msg)){
+        cnt++;
+        if (cnt >= 400){
+            setCursorPosition(TURN_MSG_POS_X + 15, 0);
+            printf("   ");
+            fflush(stdout);
+            cnt = 0;
+        } else if (cnt % 100 == 0) {
+            setCursorPosition(TURN_MSG_POS_X + 14 + cnt / 100, 0);
+            putchar('.');
+            fflush(stdout);
+        }
+        sleep_ms(10);
+    }
+    setCursorPosition(TURN_MSG_POS_X, 0);
+    printf("                   ");
+    fflush(stdout);
+
+    TransferPacket_t recv;
+    switch (msg[0]){
+    case SERVER_TO_CLIENT_WIN:
+    case SERVER_TO_CLIENT_DEFEAT:
+    case SERVER_TO_CLIENT_SHIP_HIT:
+    case SERVER_TO_CLIENT_SHIP_MISS:{
+        recv = (TransferPacket_t){
+            .header = msg[0],
+            .x = msg[1],
+            .y = msg[2],
+        };
+    } break;
+
+    default:
+        recv = (TransferPacket_t){
+            .header = msg[0],
+            .x = -1,
+            .y = -1,
+        };
+        break;
+    }
+
+    char *end = NULL;
+    // return strtol(msg, &end, 10);
+    return recv;
+}
+
+enum pico_error_codes Battleship_sendMap(Board_t *board){
+    uint8_t msg[1 + BOARD_AREA];
+    msg[0] = CLIENT_TO_SERVER_SHIP_MAP;
+    memcpy(msg + 1, board->playField, BOARD_AREA);
+    UDP_write(SERVER_UDP_PORT, msg, sizeof(msg));
+}
+
+
+void Battleship_textTurnPosition(bool myTurn){
+    setCursorPosition(TURN_MSG_POS_X, TURN_MSG_POS_Y);
+
+    if (myTurn){
+        setForegroundColor(GREEN);
+        printf("My turn!");
+        setDefaultColor();
+    } else {
+        for (int i = 0; i < 9; i++){
+            putchar(' ');
+        }
+    }
+
+    fflush(stdout);
+}
+
+
+void Battleship_youWin(){
+    const char msg[5][41]={
+        "__   __           __        _____ _   _ ",
+        "\\ \\ / /__  _   _  \\ \\      / /_ _| \\ | |",
+        " \\ V / _ \\| | | |  \\ \\ /\\ / / | ||  \\| |",
+        "  | | (_) | |_| |   \\ V  V /  | || |\\  |",
+        "  |_|\\___/ \\__,_|    \\_/\\_/  |___|_| \\_|"
+    };
+
+    clearTerminal();
+    setForegroundColor(Green);
+    for (int i = 0; i < 5; i++){
+        setCursorPosition(6, 6+i);
+        printf("%s", msg[i]);
+    }
+}
+
+void Battleship_youLose(){
+    const char msg[5][25]={
+        "    __                  ",
+        "   / /   ____  ________ ",
+        "  / /   / __ \\/ ___/ _ \\",
+        " / /___/ /_/ (__  )  __/",
+        "/_____/\\____/____/\\___/ ",
+    };
+
+    clearTerminal();
+    setForegroundColor(Red);
+    for (int i = 0; i < 5; i++){
+        setCursorPosition(6, 6+i);
+        printf("%s", msg[i]);
+    }
 }
